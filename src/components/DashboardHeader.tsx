@@ -46,16 +46,15 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   const navigate = useNavigate()
 
-  const handleLogout = () => {
-    // 1. Clear auth data (both keys used across components)
-    localStorage.removeItem("isAuthenticated")
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
-    // 2. Call parent logout handler if provided
-    if (onLogout) onLogout()
-    // 3. Redirect to login
-    navigate("/login", { replace: true })
-  }
+const handleLogout = () => {
+  localStorage.removeItem("isAuthenticated");
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+
+  onLogout?.();
+
+  navigate("/login", { replace: true });
+};
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">

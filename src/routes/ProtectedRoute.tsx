@@ -4,8 +4,9 @@ export function ProtectedRoute() {
   const location = useLocation();
 
   // Replace this with your actual auth state (e.g., AuthContext, Redux, or Zustand)
-  const isAuthenticated = Boolean(localStorage.getItem("isAuthenticated"));
-
+  const isAuthenticated =
+    localStorage.getItem("isAuthenticated") === "true";
+    
   if (!isAuthenticated) {
     // Redirect to login, preserving the attempted location
     return <Navigate to="/login" state={{ from: location }} replace />;
