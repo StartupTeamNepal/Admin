@@ -10,11 +10,13 @@ import Login from "@/features/auth/pages/Login";
 import ForgotPassword from "@/features/auth/pages/ForgotPassword";
  // Dashboard Pages
 import Dashboard from "@/pages/Dashboard";
+import { RestaurantTableRoutes } from "@/features/Table/route";
+const protectedRoutes :RouteObject[]=[
 
-// const protectedRoutes :RouteObject[]=[
+...RestaurantTableRoutes
+]
 
-// ]
-
+ 
 
 export default function AppRoutes() {
   return (
@@ -33,13 +35,13 @@ export default function AppRoutes() {
             {/* Add additional dashboard sub-routes here */}
             {/* <Route path="/settings" element={<Settings />} /> */}
             {/* Dynamically render all feature route objects */}
-              {/* {protectedRoutes.map((route, index) => (
+              {protectedRoutes.map((route, index) => (
                 <Route
                   key={route.path || index}
                   path={route.path}
                   element={route.element}
                 />
-              ))} */}
+              ))}
           </Route>
         </Route>
 

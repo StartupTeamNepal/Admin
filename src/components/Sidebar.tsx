@@ -1,5 +1,5 @@
-import { Home, } from "lucide-react"
-
+import { Home,Table } from "lucide-react"
+  
 import {
   Sidebar,
   SidebarContent,
@@ -13,6 +13,9 @@ import {
 
 const items = [
   { title: "Home", url: "/", icon: Home },
+  // {title:"",url:"",icon:}
+    {title:"Tables",url:"/manage-table",icon:Table}
+
  
 ]
 
