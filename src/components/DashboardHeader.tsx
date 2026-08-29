@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LogOut, User, Settings } from "lucide-react"
+import { LogOut, User, Settings, Bell } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 interface DashboardHeaderProps {
@@ -46,15 +46,25 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   const navigate = useNavigate()
 
-const handleLogout = () => {
-  localStorage.removeItem("isAuthenticated");
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
+  const handleLogout = () => {
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
 
-  onLogout?.();
+    onLogout?.();
 
-  navigate("/login", { replace: true });
-};
+    navigate("/login", { replace: true });
+  };
+
+  // Fixed arrow function syntax
+  const handleProfile = () => {
+    navigate("/profile", { replace: true })
+  };
+
+  // Fixed arrow function syntax
+  const handleNotifications = () => {
+    navigate("/notifications", { replace: true })
+  };
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
@@ -101,13 +111,19 @@ const handleLogout = () => {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem>
+            {/* Attached handleProfile */}
+            <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
               <span>Settings</span>
+            </DropdownMenuItem>
+            {/* Attached handleNotifications */}
+            <DropdownMenuItem onClick={handleNotifications} className="cursor-pointer">
+              <Bell className="mr-2 h-4 w-4" />
+              <span>Notifications</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />

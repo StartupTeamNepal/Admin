@@ -11,9 +11,23 @@ import ForgotPassword from "@/features/auth/pages/ForgotPassword";
  // Dashboard Pages
 import Dashboard from "@/pages/Dashboard";
 import { RestaurantTableRoutes } from "@/features/Table/route";
+import { InventoryRoutes } from "@/features/Inventory/route";
+import { StaffRoutes } from "@/features/Staff/routes";
+import { BillingRoutes } from "@/features/Billing/route";
+import { ReportRoutes } from "@/features/Reports/route";
+import { NotificationRoutes } from "@/features/Notifications/route";
+import { ProfileRoutes } from "@/features/Profile/route";
+import { MenuRoutes } from "@/features/Menu/route";
 const protectedRoutes :RouteObject[]=[
 
-...RestaurantTableRoutes
+...RestaurantTableRoutes,
+...InventoryRoutes,
+...StaffRoutes,
+...BillingRoutes,
+...ReportRoutes,
+...NotificationRoutes,
+...ProfileRoutes,
+...MenuRoutes
 ]
 
  

@@ -1,4 +1,4 @@
-import { Home,Table } from "lucide-react"
+import { Home,Table,Box, icons,Group,Coins,FileText,Menu } from "lucide-react"
   
 import {
   Sidebar,
@@ -14,8 +14,13 @@ import {
 const items = [
   { title: "Home", url: "/", icon: Home },
   // {title:"",url:"",icon:}
-    {title:"Tables",url:"/manage-table",icon:Table}
-
+    {title:"Tables",url:"/manage-table",icon:Table},
+    {title:"Inventory",url:"/inventory",icon:Box},
+    {title:"Staff",url:"/staff",icon:Group},
+    {title:"Billing",url:"/billing",icon:Coins},
+    {title:"Report",url:"/reports",icon:FileText},
+    {title:"Menu",url:"/menu",icon:Menu}
+ 
  
 ]
 

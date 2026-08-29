@@ -3,17 +3,17 @@ import type { RouteObject } from 'react-router-dom';
 // import { Outlet, Navigate } from 'react-router-dom';
 import { LazyRoute } from '@/routes/LazyRoute';
 
-const LazyRestaurantTable = React.lazy(
-  () => import('@/features/Table/pages/RestaurantTablePage')
+const LazyStaff = React.lazy(
+  () => import('@/features/Staff/pages/Staffpage')
 );
 
 
-export const RestaurantTableRoutes:RouteObject[]=[
+export const StaffRoutes:RouteObject[]=[
     {
-        path:'/manage-table',
+        path:'/staff',
         element:(
             <LazyRoute>
-                <LazyRestaurantTable/>
+                <LazyStaff/>
             </LazyRoute>
         )
     }
