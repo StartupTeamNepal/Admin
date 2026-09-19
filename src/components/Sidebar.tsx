@@ -1,4 +1,4 @@
-import { Home,Table,Box, icons,Group,Coins,FileText,Menu } from "lucide-react"
+import { Home,Table,Box,Group,Coins,FileText,Menu } from "lucide-react"
   
 import {
   Sidebar,
