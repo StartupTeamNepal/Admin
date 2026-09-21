@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MoreVertical, Ban, CheckCircle } from 'lucide-react';
+import { MoreVertical, Ban, CheckCircle,Trash2 } from 'lucide-react';
 
 export type TableStatus = 'unbooked' | 'booked' | 'unavailable';
 
 export interface RestaurantTableProps {
   tableNumber?: number;
   capacity?: number;
-  status?: TableStatus; // External controlled status
-  initialStatus?: TableStatus; // Fallback if uncontrolled
+  status?: TableStatus;
+  initialStatus?: TableStatus;
   isSelected?: boolean;
   onSelect?: () => void;
   onStatusChange?: (newStatus: TableStatus) => void;
+  onDelete?: () => void;
+
 }
 
 interface StatusStyle {
@@ -53,15 +55,16 @@ export default function RestaurantTable({
   isSelected = false,
   onSelect,
   onStatusChange,
+  onDelete,
 }: RestaurantTableProps) {
-  // Support both controlled and uncontrolled usage
   const [internalStatus, setInternalStatus] = useState<TableStatus>(
     controlledStatus ?? initialStatus
   );
-  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // Sync internal state if controlled prop changes from parent
   useEffect(() => {
     if (controlledStatus !== undefined) {
       setInternalStatus(controlledStatus);
@@ -69,42 +72,53 @@ export default function RestaurantTable({
   }, [controlledStatus]);
 
   const currentStatus = controlledStatus ?? internalStatus;
-  const currentConfig = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.unbooked;
+  const currentConfig = STATUS_CONFIG[currentStatus];
 
-  // Close dropdown menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
         setIsMenuOpen(false);
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
-  const handleStatusUpdate = (newStatus: TableStatus, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent selection trigger on action click
+  const handleStatusUpdate = (
+    newStatus: TableStatus,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+
     setInternalStatus(newStatus);
     setIsMenuOpen(false);
+
     onStatusChange?.(newStatus);
   };
 
   return (
     <div
       onClick={onSelect}
-      className={`relative flex flex-col justify-between w-48 h-36 p-4 rounded-xl border-2 transition-all cursor-pointer shadow-sm hover:shadow-md ${
-        currentConfig.bg
-      } ${currentConfig.border} ${
-        isSelected ? 'ring-4 ring-blue-500 ring-offset-2' : ''
-      }`}
+      className={`relative flex flex-col justify-between w-48 h-36 p-4 rounded-xl border-2 transition-all cursor-pointer shadow-sm hover:shadow-md
+        ${currentConfig.bg}
+        ${currentConfig.border}
+        ${isSelected ? 'ring-4 ring-blue-500 ring-offset-2' : ''}
+      `}
     >
-      {/* Top Header Row */}
+      {/* Header */}
       <div className="flex justify-between items-center">
         <span className="font-semibold text-lg text-slate-800 dark:text-slate-100">
           Table {tableNumber}
         </span>
 
-        {/* Dropdown Menu Trigger */}
+        {/* Menu */}
         <div className="relative" ref={menuRef}>
           <button
             type="button"
@@ -118,13 +132,14 @@ export default function RestaurantTable({
             <MoreVertical className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </button>
 
-          {/* Dropdown Menu */}
           {isMenuOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg border border-slate-200 dark:border-slate-700 z-10 py-1 text-sm">
               {currentStatus !== 'unavailable' ? (
                 <button
                   type="button"
-                  onClick={(e) => handleStatusUpdate('unavailable', e)}
+                  onClick={(e) =>
+                    handleStatusUpdate('unavailable', e)
+                  }
                   className="w-full text-left px-4 py-2 text-amber-600 dark:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                 >
                   <Ban className="w-4 h-4" />
@@ -133,30 +148,47 @@ export default function RestaurantTable({
               ) : (
                 <button
                   type="button"
-                  onClick={(e) => handleStatusUpdate('unbooked', e)}
+                  onClick={(e) =>
+                    handleStatusUpdate('unbooked', e)
+                  }
                   className="w-full text-left px-4 py-2 text-emerald-600 dark:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Make Available
                 </button>
+                
               )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMenuOpen(false);
+                  onDelete?.();
+                }}
+                className="w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Table
+              </button>
             </div>
+            
           )}
         </div>
       </div>
 
-      {/* Middle Information */}
+      {/* Capacity */}
       <div className="text-sm text-slate-600 dark:text-slate-400">
         Seats: {capacity} people
       </div>
 
-      {/* Bottom Status Badge */}
+      {/* Status */}
       <div className="flex items-center justify-between mt-auto">
         <span
           className={`text-xs font-semibold px-2.5 py-1 rounded-full text-white ${currentConfig.badge}`}
         >
           {currentConfig.label}
         </span>
+
         {isSelected && (
           <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
             Selected
