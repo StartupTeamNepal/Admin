@@ -4,8 +4,13 @@ import type { RouteObject } from 'react-router-dom';
 import { LazyRoute } from '@/routes/LazyRoute';
 
 const LazyMenu = React.lazy(
-  () => import('@/features/Menu/pages/Menupage')
+  () => import('@/features/Menu/pages/Menupage'),
+
 );
+const LazyCategories = React.lazy(
+      ()=>import ('@/features/Menu/pages/Addmenupage')
+
+)
 
 
 export const MenuRoutes:RouteObject[]=[
@@ -16,5 +21,13 @@ export const MenuRoutes:RouteObject[]=[
                 <LazyMenu/>
              </LazyRoute>
         )
+    },
+    {
+       path:'/menu-add',
+       element:(
+        <LazyRoute>
+            <LazyCategories/>
+        </LazyRoute>
+       )
     }
 ]

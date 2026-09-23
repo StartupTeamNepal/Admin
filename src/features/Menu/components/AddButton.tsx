@@ -1,18 +1,22 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
 
-interface AddMenuOptionButtonProps {
-  onAdd: () => void;
+interface AddButtonProps {
+  label: string;
+  onClick: () => void;
+  ariaLabel?: string;
 }
 
-export default function AddMenuOptionButton({
-  onAdd,
-}: AddMenuOptionButtonProps) {
+export default function AddButton({
+  label,
+  onClick,
+  ariaLabel,
+}: AddButtonProps) {
   return (
     <button
       type="button"
-      onClick={onAdd}
-      aria-label="Add menu option"
+      onClick={onClick}
+      aria-label={ariaLabel || label}
       className="
         inline-flex items-center justify-center
         gap-2
@@ -31,9 +35,8 @@ export default function AddMenuOptionButton({
     >
       <Plus className="h-5 w-5" />
 
-      {/* Hidden on small screens */}
       <span className="hidden sm:inline">
-        Add Menu Option
+        {label}
       </span>
     </button>
   );
