@@ -1,73 +1,50 @@
 import React, { useState } from 'react';
-import RestaurantTable, {
-
-} from '../components/RestaurantTable';
-import type { TableStatus } from '../components/RestaurantTable';import AddTableButton from '../components/AddtableButton';
+import RestaurantTable from '../components/RestaurantTable';
+import type { TableStatus } from '../components/RestaurantTable';
+import AddTableButton from '../components/AddtableButton';
+import TableForm from '../components/AddtableForm';
+import type { TableFormData } from '../components/AddtableForm';
 
 interface TableData {
   id: number;
   tableNumber: number;
   capacity: number;
+  tableType: string;
+  description: string;
   status: TableStatus;
 }
 
 export default function TableGrid() {
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const [tables, setTables] = useState<TableData[]>([
-    {
-      id: 1,
-      tableNumber: 1,
-      capacity: 2,
-      status: 'unbooked',
-    },
-    {
-      id: 2,
-      tableNumber: 2,
-      capacity: 4,
-      status: 'booked',
-    },
-    {
-      id: 3,
-      tableNumber: 3,
-      capacity: 6,
-      status: 'unavailable',
-    },
+    { id: 1, tableNumber: 1, capacity: 2, tableType: 'Indoor', description: 'Small table', status: 'unbooked' },
+    { id: 2, tableNumber: 2, capacity: 4, tableType: 'Indoor', description: 'Standard table', status: 'booked' },
+    { id: 3, tableNumber: 3, capacity: 6, tableType: 'Outdoor', description: 'Large outdoor table', status: 'unavailable' },
   ]);
 
-  const handleAddTable = () => {
-    setTables((prevTables) => {
-      const nextTableNumber =
-        prevTables.length > 0
-          ? Math.max(
-              ...prevTables.map((table) => table.tableNumber)
-            ) + 1
-          : 1;
+  const handleAddTable = (data: TableFormData) => {
+    const nextTableNumber =
+      tables.length > 0 ? Math.max(...tables.map((t) => t.tableNumber)) + 1 : 1;
 
-      return [
-        ...prevTables,
-        {
-          id: Date.now(),
-          tableNumber: nextTableNumber,
-          capacity: 4,
-          status: 'unbooked',
-        },
-      ];
-    });
+    const newTable: TableData = {
+      id: Date.now(),
+      tableNumber: Number(data.tableNumber) || nextTableNumber,
+      capacity: data.capacity,
+      tableType: data.tableType,
+      description: data.description,
+      status: 'unbooked',
+    };
+
+    setTables((prev) => [...prev, newTable]);
+    setIsFormOpen(false);
   };
 
-  const handleTableStatusChange = (
-    tableId: number,
-    newStatus: TableStatus
-  ) => {
-    setTables((prevTables) =>
-      prevTables.map((table) =>
-        table.id === tableId
-          ? {
-              ...table,
-              status: newStatus,
-            }
-          : table
+  const handleTableStatusChange = (tableId: number, newStatus: TableStatus) => {
+    setTables((prev) =>
+      prev.map((table) =>
+        table.id === tableId ? { ...table, status: newStatus } : table
       )
     );
   };
@@ -80,10 +57,10 @@ export default function TableGrid() {
           Restaurant Tables
         </h1>
 
-        <AddTableButton onAdd={handleAddTable} />
+        <AddTableButton onAdd={() => setIsFormOpen(true)} />
       </div>
 
-      {/* Table Grid */}
+      {/* Table Grid: always visible, even while the form is open */}
       <div className="flex flex-wrap gap-4">
         {tables.map((table) => (
           <RestaurantTable
@@ -99,6 +76,24 @@ export default function TableGrid() {
           />
         ))}
       </div>
+
+      {/* Modal overlay */}
+      {isFormOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setIsFormOpen(false)}
+        >
+          <div
+            className="w-full max-w-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <TableForm
+              onSubmit={handleAddTable}
+              onCancel={() => setIsFormOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
