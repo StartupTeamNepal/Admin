@@ -1,4 +1,4 @@
-import { useState } from "react";
+ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -16,6 +16,9 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { setAccessToken } from "@/shared/api/authStorage";
+
+import { loginAdmin } from "@/features/auth/api/apilinks";
 
 type LoginFormValues = {
   email: string;
@@ -27,76 +30,112 @@ export default function LoginForm() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
-  const { register, handleSubmit, setValue, watch } = useForm<LoginFormValues>({
-    defaultValues: {
-      email: "",
-      password: "",
-      rememberMe: false,
-    },
-  });
+  const { register, handleSubmit, setValue, watch } =
+    useForm<LoginFormValues>({
+      defaultValues: {
+        email: "",
+        password: "",
+        rememberMe: false,
+      },
+    });
 
   const rememberMe = watch("rememberMe");
 
-  const submit = (values: LoginFormValues) => {
-    // 1. Basic empty check
-    if (!values.email.trim() || !values.password.trim()) {
-      toast.error("Please enter both username/email and password");
-      return;
-    }
+const submit = async (values: LoginFormValues) => {
+  if (!values.email.trim() || !values.password.trim()) {
+    toast.error("Please enter both email and password");
+    return;
+  }
 
-    // 2. Validate credentials against admin / test123
-    if (values.email === "admin" && values.password === "test123") {
-      localStorage.setItem("isAuthenticated", "true");
-      toast.success("Login successful!");
-      navigate("/", { replace: true });
-    } else {
-      // Show explicit error message when ID or Password is wrong
-      toast.error("Incorrect username or password. Please try again.");
-    }
-  };
+  try {
+    const response = await loginAdmin({
+      email: values.email,
+      password: values.password,
+    });
+
+    // Store access token
+    setAccessToken(response.data.token);
+
+    // Store refresh token
+    localStorage.setItem("refreshToken", response.data.refreshToken);
+
+    // Store expiration time
+    localStorage.setItem("expiresAt", response.data.expiresAt);
+
+    // Optional: store user information
+    localStorage.setItem("userId", response.data.userId);
+    localStorage.setItem("user", JSON.stringify({
+      fullName: response.data.fullName,
+      email: response.data.email,
+      role: response.data.role,
+      restaurantName: response.data.restaurantName,
+    }));
+
+    toast.success(response.message);
+
+    navigate("/", { replace: true });
+  } catch (error: any) {
+    console.error("Login error:", error);
+
+    toast.error(
+      error?.response?.data?.message ||
+        "Invalid email or password. Please try again."
+    );
+  }
+};
 
   return (
-    <Card className="w-full">
+    <Card className="mx-auto w-full max-w-md">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Login</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-xl font-bold sm:text-2xl">
+          Login
+        </CardTitle>
+
+        <CardDescription className="text-sm sm:text-base">
           Enter your credentials to access your account
         </CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit(submit)}>
         <CardContent className="space-y-4">
-          {/* Email / Username Input */}
+          {/* Email */}
           <div className="space-y-2">
-            <Label htmlFor="email">Email / Username</Label>
+            <Label htmlFor="email">Email</Label>
+
             <Input
               id="email"
-              type="text"
-              placeholder="admin"
-              {...register("email", { required: true })}
+              type="email"
+              placeholder="you@example.com"
+              {...register("email", {
+                required: true,
+              })}
             />
           </div>
 
-          {/* Password Input with Eye Toggle */}
+          {/* Password */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <Label htmlFor="password">Password</Label>
+
               <Link
                 to="/forgot-password"
-                className="text-sm text-muted-foreground hover:underline"
+                className="text-xs text-muted-foreground hover:text-foreground hover:underline sm:text-sm"
               >
                 Forgot password?
               </Link>
             </div>
-            
+
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 className="pr-10"
-                {...register("password", { required: true })}
+                {...register("password", {
+                  required: true,
+                })}
               />
+
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
@@ -112,7 +151,7 @@ export default function LoginForm() {
             </div>
           </div>
 
-          {/* Remember Me Checkbox */}
+          {/* Remember Me */}
           <div className="flex items-center space-x-2">
             <Checkbox
               id="rememberMe"
@@ -121,22 +160,38 @@ export default function LoginForm() {
                 setValue("rememberMe", Boolean(checked))
               }
             />
-            <Label htmlFor="rememberMe" className="text-sm font-medium">
+
+            <Label
+              htmlFor="rememberMe"
+              className="text-sm font-medium"
+            >
               Remember me
             </Label>
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-3">
+        <CardFooter className="flex flex-col gap-4">
+          {/* Sign In */}
           <Button type="submit" className="w-full">
             Sign In
           </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            Default credentials: <code className="font-mono">admin</code> /{" "}
-            <code className="font-mono">test123</code>
-          </p>
+
+          {/* Sign Up */}
+          <div className="flex w-full items-center justify-center gap-1 text-sm text-muted-foreground">
+            <span>Don't have an account?</span>
+
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-sm"
+              onClick={() => navigate("/register")}
+            >
+              Sign up
+            </Button>
+          </div>
         </CardFooter>
       </form>
     </Card>
   );
 }
+ 

@@ -1,17 +1,27 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+ import { Navigate, Outlet, useLocation } from "react-router-dom";
+import {
+  getAccessToken,
+  isTokenExpired,
+} from "@/shared/api/authStorage";
 
 export function ProtectedRoute() {
   const location = useLocation();
 
-  // Replace this with your actual auth state (e.g., AuthContext, Redux, or Zustand)
+  const token = getAccessToken();
+
   const isAuthenticated =
-    localStorage.getItem("isAuthenticated") === "true";
-    
+    !!token && !isTokenExpired();
+
   if (!isAuthenticated) {
-    // Redirect to login, preserving the attempted location
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
-  // User is authenticated -> render wrapped routes
   return <Outlet />;
 }
+ 

@@ -18,6 +18,8 @@ import { ReportRoutes } from "@/features/Reports/route";
 import { NotificationRoutes } from "@/features/Notifications/route";
 import { ProfileRoutes } from "@/features/Profile/route";
 import { MenuRoutes } from "@/features/Menu/route";
+import RestaurantRegistrationForm from "@/features/auth/forms/RegistrationForm";
+import VerificationForm from "@/features/auth/forms/CodeVerificationForm";
 const protectedRoutes :RouteObject[]=[
 
 ...RestaurantTableRoutes,
@@ -40,6 +42,8 @@ export default function AppRoutes() {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path ="/register" element={<RestaurantRegistrationForm/>}/>
+          <Route path ="/verify" element ={<VerificationForm/>}/>
         </Route>
 
        
