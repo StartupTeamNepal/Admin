@@ -1,4 +1,5 @@
 import api from "@/shared/api/axiosInstance";
+import { setTokens } from "@/shared/api/authStorage"; // adjust path
 
 export interface RegisterRequest {
   email: string;
@@ -92,5 +93,15 @@ export const loginAdmin = async (
     data
   );
 
-  return response.data;
+  const result = response.data;
+
+  if (result.success && result.data) {
+    setTokens({
+      accessToken: result.data.token,
+      refreshToken: result.data.refreshToken,
+      expiresAt: result.data.expiresAt,
+    });
+  }
+
+  return result;
 };

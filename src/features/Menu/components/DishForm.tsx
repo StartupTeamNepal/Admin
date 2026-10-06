@@ -110,6 +110,7 @@ export default function DishForm({
     }
 
     const payload: CreateMenuItemRequest = {
+      categoryId: category.id,
       name: name.trim(),
       description: description.trim(),
       basePrice: Number(basePrice),

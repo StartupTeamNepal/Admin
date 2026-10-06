@@ -24,6 +24,7 @@ export interface UpdateMenuItemVariantRequest {
 }
 
 export interface CreateMenuItemRequest {
+  categoryId: string;
   name: string;
   description: string;
   basePrice: number;
@@ -37,6 +38,7 @@ export interface CreateMenuItemRequest {
 }
 
 export interface UpdateMenuItemRequest {
+  categoryId: string;
   name: string;
   description: string;
   basePrice: number;

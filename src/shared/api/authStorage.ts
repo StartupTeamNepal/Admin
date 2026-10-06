@@ -39,4 +39,19 @@ export function isTokenExpired(): boolean {
 
   return new Date(expiresAt).getTime() <= Date.now();
 }
- 
+ // authStorage.ts (add these)
+export function setTokens(data: {
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+}): void {
+  setAccessToken(data.accessToken);
+  if (data.refreshToken) setRefreshToken(data.refreshToken);
+  if (data.expiresAt) setExpiresAt(data.expiresAt);
+}
+
+export function clearTokens(): void {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(EXPIRES_AT_KEY);
+}
