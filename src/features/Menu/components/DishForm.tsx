@@ -1,70 +1,119 @@
-import React, { useState } from 'react'
-import { Card } from '@/components/ui/card'
+import React, { useState } from "react";
+import { Card } from "@/components/ui/card";
+import {
+  createMenuItem,
+   type CreateMenuItemRequest,
+} from "../api/MenuItems";
+import {type  MenuCategory } from "../api/Categorylinks";
 
 interface Variant {
-  name: string
-  additionalPrice: string
-  isAvailable: boolean
+  name: string;
+  additionalPrice: string;
+  isAvailable: boolean;
 }
 
 interface DishFormProps {
-  category: string | null
-  onBack: () => void
+  category: MenuCategory | null;
+  onBack: () => void;
+  onSuccess?: () => void;
 }
 
 export default function DishForm({
   category,
   onBack,
+  onSuccess,
 }: DishFormProps) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [basePrice, setBasePrice] = useState('')
-  const [imageUrl, setImageUrl] = useState('')
-  const [isAvailable, setIsAvailable] = useState(true)
-  const [preparationTime, setPreparationTime] = useState('')
-  const [isSpecialOffer, setIsSpecialOffer] = useState(false)
-  const [specialOfferPrice, setSpecialOfferPrice] = useState('')
-  const [displayOrder, setDisplayOrder] = useState('')
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [basePrice, setBasePrice] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [preparationTime, setPreparationTime] = useState("");
+  const [isSpecialOffer, setIsSpecialOffer] = useState(false);
+  const [specialOfferPrice, setSpecialOfferPrice] = useState("");
+  const [displayOrder, setDisplayOrder] = useState("");
 
-  const [variants, setVariants] = useState<Variant[]>([])
+  const [variants, setVariants] = useState<Variant[]>([]);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // =========================
+  // Variant Functions
+  // =========================
 
   const addVariant = () => {
-    setVariants([
-      ...variants,
+    setVariants((prev) => [
+      ...prev,
       {
-        name: '',
-        additionalPrice: '',
+        name: "",
+        additionalPrice: "",
         isAvailable: true,
       },
-    ])
-  }
+    ]);
+  };
 
   const removeVariant = (index: number) => {
-    setVariants(variants.filter((_, i) => i !== index))
-  }
+    setVariants((prev) =>
+      prev.filter((_, i) => i !== index)
+    );
+  };
 
   const updateVariant = (
     index: number,
     field: keyof Variant,
     value: string | boolean
   ) => {
-    setVariants(
-      variants.map((variant, i) =>
+    setVariants((prev) =>
+      prev.map((variant, i) =>
         i === index
-          ? { ...variant, [field]: value }
+          ? {
+              ...variant,
+              [field]: value,
+            }
           : variant
       )
-    )
-  }
+    );
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  // =========================
+  // Submit
+  // =========================
 
-    const dishData = {
-      name,
-      description,
+  const handleSubmit = async (
+    e: React.FormEvent
+  ) => {
+    e.preventDefault();
+
+    if (!category) {
+      setError("Please select a category.");
+      return;
+    }
+
+    if (!name.trim()) {
+      setError("Dish name is required.");
+      return;
+    }
+
+    if (!basePrice || Number(basePrice) < 0) {
+      setError("Please enter a valid base price.");
+      return;
+    }
+
+    if (
+      isSpecialOffer &&
+      (!specialOfferPrice ||
+        Number(specialOfferPrice) < 0)
+    ) {
+      setError("Please enter a valid special offer price.");
+      return;
+    }
+
+    const payload: CreateMenuItemRequest = {
+      name: name.trim(),
+      description: description.trim(),
       basePrice: Number(basePrice),
-      imageUrl,
+      imageUrl: imageUrl.trim(),
       isAvailable,
       preparationTime: Number(preparationTime),
       isSpecialOffer,
@@ -73,17 +122,34 @@ export default function DishForm({
         : 0,
       displayOrder: Number(displayOrder),
       variants: variants.map((variant) => ({
-        name: variant.name,
-        additionalPrice: Number(variant.additionalPrice),
+        name: variant.name.trim(),
+        additionalPrice: Number(
+          variant.additionalPrice
+        ),
         isAvailable: variant.isAvailable,
       })),
-    }
+    };
 
-    console.log({
-      category,
-      ...dishData,
-    })
-  }
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log("Selected category:", category);
+      console.log("Creating menu item:", payload);
+
+      await createMenuItem(payload);
+
+      onSuccess?.();
+    } catch (error) {
+      console.error("Failed to create menu item:", error);
+
+      setError(
+        "Failed to create dish. Please check your information and try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Card className="mx-auto w-full max-w-4xl p-4 sm:p-6 lg:p-8">
@@ -95,9 +161,19 @@ export default function DishForm({
         </h2>
 
         <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-          Category: {category}
+          Category:{" "}
+          <span className="font-medium text-slate-700">
+            {category?.categoryName ?? "No category selected"}
+          </span>
         </p>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}
@@ -121,9 +197,12 @@ export default function DishForm({
               type="text"
               placeholder="Enter dish name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) =>
+                setName(e.target.value)
+              }
               required
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+              disabled={loading}
+              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
             />
           </div>
 
@@ -143,9 +222,12 @@ export default function DishForm({
               step="0.01"
               placeholder="Enter base price"
               value={basePrice}
-              onChange={(e) => setBasePrice(e.target.value)}
+              onChange={(e) =>
+                setBasePrice(e.target.value)
+              }
               required
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+              disabled={loading}
+              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
             />
           </div>
 
@@ -166,8 +248,11 @@ export default function DishForm({
               type="url"
               placeholder="https://example.com/image.jpg"
               value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+              onChange={(e) =>
+                setImageUrl(e.target.value)
+              }
+              disabled={loading}
+              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
             />
           </div>
 
@@ -193,7 +278,8 @@ export default function DishForm({
                 setPreparationTime(e.target.value)
               }
               required
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+              disabled={loading}
+              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
             />
           </div>
 
@@ -216,10 +302,10 @@ export default function DishForm({
                 setDisplayOrder(e.target.value)
               }
               required
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+              disabled={loading}
+              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
             />
           </div>
-
         </div>
 
         {/* Description */}
@@ -235,9 +321,12 @@ export default function DishForm({
             id="dish-description"
             placeholder="Enter dish description"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) =>
+              setDescription(e.target.value)
+            }
             rows={3}
-            className="w-full resize-none rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+            disabled={loading}
+            className="w-full resize-none rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
           />
         </div>
 
@@ -262,6 +351,7 @@ export default function DishForm({
               onChange={(e) =>
                 setIsAvailable(e.target.checked)
               }
+              disabled={loading}
               className="h-4 w-4 shrink-0"
             />
           </div>
@@ -284,10 +374,10 @@ export default function DishForm({
               onChange={(e) =>
                 setIsSpecialOffer(e.target.checked)
               }
+              disabled={loading}
               className="h-4 w-4 shrink-0"
             />
           </div>
-
         </div>
 
         {/* Special Offer Price */}
@@ -311,7 +401,8 @@ export default function DishForm({
                 setSpecialOfferPrice(e.target.value)
               }
               required
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+              disabled={loading}
+              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
             />
           </div>
         )}
@@ -333,7 +424,8 @@ export default function DishForm({
             <button
               type="button"
               onClick={addVariant}
-              className="w-full rounded-lg border px-3 py-2 text-sm font-medium hover:bg-slate-50 sm:w-auto"
+              disabled={loading}
+              className="w-full rounded-lg border px-3 py-2 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               + Add Variant
             </button>
@@ -356,8 +448,11 @@ export default function DishForm({
 
                     <button
                       type="button"
-                      onClick={() => removeVariant(index)}
-                      className="text-xs font-medium text-red-500 hover:text-red-700 sm:text-sm"
+                      onClick={() =>
+                        removeVariant(index)
+                      }
+                      disabled={loading}
+                      className="text-xs font-medium text-red-500 hover:text-red-700 disabled:opacity-50 sm:text-sm"
                     >
                       Remove
                     </button>
@@ -379,12 +474,13 @@ export default function DishForm({
                         onChange={(e) =>
                           updateVariant(
                             index,
-                            'name',
+                            "name",
                             e.target.value
                           )
                         }
                         required
-                        className="w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+                        disabled={loading}
+                        className="w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
                       />
                     </div>
 
@@ -399,19 +495,21 @@ export default function DishForm({
                         min="0"
                         step="0.01"
                         placeholder="e.g. 50"
-                        value={variant.additionalPrice}
+                        value={
+                          variant.additionalPrice
+                        }
                         onChange={(e) =>
                           updateVariant(
                             index,
-                            'additionalPrice',
+                            "additionalPrice",
                             e.target.value
                           )
                         }
                         required
-                        className="w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+                        disabled={loading}
+                        className="w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
                       />
                     </div>
-
                   </div>
 
                   {/* Variant Availability */}
@@ -422,23 +520,24 @@ export default function DishForm({
 
                     <input
                       type="checkbox"
-                      checked={variant.isAvailable}
+                      checked={
+                        variant.isAvailable
+                      }
                       onChange={(e) =>
                         updateVariant(
                           index,
-                          'isAvailable',
+                          "isAvailable",
                           e.target.checked
                         )
                       }
+                      disabled={loading}
                       className="h-4 w-4"
                     />
                   </div>
-
                 </div>
               ))}
             </div>
           )}
-
         </div>
 
         {/* Actions */}
@@ -447,21 +546,22 @@ export default function DishForm({
           <button
             type="button"
             onClick={onBack}
-            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 sm:w-auto"
+            disabled={loading}
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             ← Go Back
           </button>
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto"
+            disabled={loading}
+            className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
-            Save Dish
+            {loading ? "Saving..." : "Save Dish"}
           </button>
 
         </div>
-
       </form>
     </Card>
-  )
+  );
 }

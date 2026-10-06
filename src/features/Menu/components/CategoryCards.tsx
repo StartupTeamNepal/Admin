@@ -1,13 +1,15 @@
 interface DishCategoryCardProps {
-  title: string
-  image?: string
-  selected?: boolean
-  onClick?: () => void
+  title: string;
+  description: string;
+  displayOrder: number;
+  selected?: boolean;
+  onClick?: () => void;
 }
 
 export default function DishCategoryCard({
   title,
-  image,
+  description,
+  displayOrder,
   selected = false,
   onClick,
 }: DishCategoryCardProps) {
@@ -15,31 +17,27 @@ export default function DishCategoryCard({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full overflow-hidden rounded-xl border text-left transition ${
+      className={`w-full rounded-xl border p-4 text-left transition ${
         selected
-          ? 'border-blue-600 ring-2 ring-blue-500'
-          : 'border-slate-200 hover:border-slate-400'
+          ? "border-blue-600 ring-2 ring-blue-500"
+          : "border-slate-200 hover:border-slate-400"
       }`}
     >
-      <div className="flex h-40 items-center justify-center bg-slate-100">
-        {image ? (
-          <img
-            src={image}
-            alt={title}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <span className="text-sm text-slate-400">
-            No image
-          </span>
-        )}
-      </div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-slate-900">
+            {title}
+          </h3>
 
-      <div className="p-4">
-        <h3 className="font-semibold">
-          {title}
-        </h3>
+          <p className="mt-1 text-sm text-slate-500">
+            {description || "No description"}
+          </p>
+        </div>
+
+        <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+          #{displayOrder}
+        </span>
       </div>
     </button>
-  )
+  );
 }

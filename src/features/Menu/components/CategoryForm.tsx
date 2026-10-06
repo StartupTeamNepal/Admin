@@ -1,37 +1,57 @@
-import React, { useState } from 'react';
-
-export interface CategoryFormData {
-  categoryName: string;
-  description: string;
-  displayOrder: number;
-}
+import React, { useState } from "react";
+import {
+  createMenuCategory,
+  type CreateMenuCategoryRequest,
+} from "../api/Categorylinks";
 
 interface CategoryFormProps {
   onClose: () => void;
-  onSubmit?: (data: CategoryFormData) => void;
+  onSuccess?: () => void;
 }
 
 export default function CategoryForm({
   onClose,
-  onSubmit,
+  onSuccess,
 }: CategoryFormProps) {
-  const [categoryName, setCategoryName] = useState('');
-  const [description, setDescription] = useState('');
+  const [categoryName, setCategoryName] = useState("");
+  const [description, setDescription] = useState("");
   const [displayOrder, setDisplayOrder] = useState<number>(0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const payload: CategoryFormData = {
+    if (!categoryName.trim()) {
+      setError("Category name is required.");
+      return;
+    }
+
+    const payload: CreateMenuCategoryRequest = {
       categoryName: categoryName.trim(),
       description: description.trim(),
       displayOrder,
     };
 
-    console.log(payload);
-    onSubmit?.(payload);
+    try {
+      setLoading(true);
+      setError(null);
 
-    onClose();
+      await createMenuCategory(payload);
+
+      // Notify parent that category was successfully created
+      onSuccess?.();
+
+      // Close modal
+      onClose();
+    } catch (error) {
+      console.error("Failed to create menu category:", error);
+
+      setError("Failed to create category. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,7 +72,8 @@ export default function CategoryForm({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+            disabled={loading}
+            className="text-slate-500 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:text-slate-200"
           >
             ✕
           </button>
@@ -61,6 +82,14 @@ export default function CategoryForm({
         {/* Form */}
         <form onSubmit={handleSubmit}>
           <div className="space-y-5 p-6">
+
+            {/* Error */}
+            {error && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
             {/* Category Name */}
             <div className="space-y-2">
               <label
@@ -76,8 +105,9 @@ export default function CategoryForm({
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
                 placeholder="e.g. Breakfast"
+                disabled={loading}
                 required
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
             </div>
 
@@ -96,7 +126,8 @@ export default function CategoryForm({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="e.g. Morning meals served until 11 AM"
                 rows={3}
-                className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                disabled={loading}
+                className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
             </div>
 
@@ -117,10 +148,11 @@ export default function CategoryForm({
                 value={displayOrder}
                 onChange={(e) =>
                   setDisplayOrder(
-                    e.target.value === '' ? 0 : Number(e.target.value)
+                    e.target.value === "" ? 0 : Number(e.target.value)
                   )
                 }
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                disabled={loading}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
             </div>
           </div>
@@ -130,16 +162,18 @@ export default function CategoryForm({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              disabled={loading}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              disabled={loading}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Save
+              {loading ? "Saving..." : "Save"}
             </button>
           </div>
         </form>
