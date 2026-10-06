@@ -120,7 +120,7 @@ export default function DishForm({
       isSpecialOffer,
       specialOfferPrice: isSpecialOffer
         ? Number(specialOfferPrice)
-        : 0,
+        : null,
       displayOrder: Number(displayOrder),
       variants: variants.map((variant) => ({
         name: variant.name.trim(),
