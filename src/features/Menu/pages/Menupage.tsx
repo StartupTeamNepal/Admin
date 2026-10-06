@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AddButton from "../components/AddButton";
-import { useNavigate } from "react-router";
+import { useLocation,useNavigate } from "react-router";
 import {
   getMenuItems,
   type MenuItem,
@@ -8,6 +8,7 @@ import {
 
 export default function Menupage() {
   const navigate = useNavigate();
+  const location =useLocation();
 
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,9 +34,9 @@ export default function Menupage() {
     }
   };
 
-  useEffect(() => {
-    fetchMenuItems();
-  }, []);
+useEffect(() => {
+  fetchMenuItems();
+}, [location.pathname]);
 
   const availableItems = items.filter(
     (item) => item.isAvailable

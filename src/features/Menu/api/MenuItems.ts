@@ -133,9 +133,16 @@ export const getMenuItemById = async (
 export const createMenuItem = async (
   data: CreateMenuItemRequest
 ): Promise<MenuItemResponse> => {
+  const { categoryId, ...menuItemData } = data;
+
   const response = await api.post<MenuItemResponse>(
     "/api/admin/v1/menu-items",
-    data
+    menuItemData,
+    {
+      params: {
+        categoryId: categoryId,
+      },
+    }
   );
 
   return response.data;

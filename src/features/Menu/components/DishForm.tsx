@@ -5,6 +5,7 @@ import {
    type CreateMenuItemRequest,
 } from "../api/MenuItems";
 import {type  MenuCategory } from "../api/Categorylinks";
+import { useNavigate } from "react-router-dom";
 
 interface Variant {
   name: string;
@@ -37,7 +38,8 @@ export default function DishForm({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const navigate = useNavigate();
+  
   // =========================
   // Variant Functions
   // =========================
@@ -141,6 +143,7 @@ export default function DishForm({
       await createMenuItem(payload);
 
       onSuccess?.();
+      navigate("/menu")
     } catch (error) {
       console.error("Failed to create menu item:", error);
 
@@ -556,6 +559,7 @@ export default function DishForm({
           <button
             type="submit"
             disabled={loading}
+            
             className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             {loading ? "Saving..." : "Save Dish"}
