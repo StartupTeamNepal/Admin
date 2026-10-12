@@ -2,11 +2,14 @@ import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import {
   createMenuItem,
-   type CreateMenuItemRequest,
+  type CreateMenuItemRequest,
 } from "../api/MenuItems";
-import {type  MenuCategory } from "../api/Categorylinks";
+import { type MenuCategory } from "../api/Categorylinks";
 import { useNavigate } from "react-router-dom";
 import ImageUpload from "./ImageUpload";
+
+// Change this to your currency label (e.g. "$", "Rs", "€")
+const CURRENCY = "Rs";
 
 interface Variant {
   name: string;
@@ -20,6 +23,132 @@ interface DishFormProps {
   onSuccess?: () => void;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Shared styles                                                              */
+/* -------------------------------------------------------------------------- */
+
+const inputClass =
+  "block w-full rounded-lg border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 " +
+  "placeholder:text-stone-400 shadow-sm transition " +
+  "focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 " +
+  "disabled:cursor-not-allowed disabled:bg-stone-100 disabled:opacity-60";
+
+const labelClass = "block text-sm font-medium text-stone-800";
+const hintClass = "mt-1 text-xs text-stone-500";
+
+/* -------------------------------------------------------------------------- */
+/* Small building blocks                                                      */
+/* -------------------------------------------------------------------------- */
+
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="grid gap-5 py-6 first:pt-0 md:grid-cols-[200px_1fr] md:gap-8 lg:grid-cols-[240px_1fr]">
+      <div>
+        <h3 className="text-base font-semibold text-stone-900">{title}</h3>
+        {description && (
+          <p className="mt-1 text-sm leading-relaxed text-stone-500">
+            {description}
+          </p>
+        )}
+      </div>
+      <div className="min-w-0 space-y-5">{children}</div>
+    </section>
+  );
+}
+
+function Switch({
+  checked,
+  onChange,
+  disabled,
+  label,
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  disabled?: boolean;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={
+        "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors " +
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 " +
+        "disabled:cursor-not-allowed disabled:opacity-50 " +
+        (checked ? "bg-blue-600" : "bg-stone-300")
+      }
+    >
+      <span
+        className={
+          "inline-block h-5 w-5 rounded-full bg-white shadow transition-transform " +
+          (checked ? "translate-x-[22px]" : "translate-x-0.5")
+        }
+      />
+    </button>
+  );
+}
+
+function PriceInput(
+  props: React.InputHTMLAttributes<HTMLInputElement>
+) {
+  return (
+    <div className="relative">
+      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm text-stone-500">
+        {CURRENCY}
+      </span>
+      <input
+        type="number"
+        min="0"
+        step="0.01"
+        {...props}
+        className={inputClass + " pl-10 " + (props.className ?? "")}
+      />
+    </div>
+  );
+}
+
+const PlusIcon = () => (
+  <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+    <path d="M10 4a1 1 0 0 1 1 1v4h4a1 1 0 1 1 0 2h-4v4a1 1 0 1 1-2 0v-4H5a1 1 0 1 1 0-2h4V5a1 1 0 0 1 1-1Z" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+    <path
+      fillRule="evenodd"
+      d="M8.75 3a1 1 0 0 0-1 1v.5H4.5a.75.75 0 0 0 0 1.5h.6l.6 9.1A2 2 0 0 0 7.7 17h4.6a2 2 0 0 0 2-1.9l.6-9.1h.6a.75.75 0 0 0 0-1.5h-3.25V4a1 1 0 0 0-1-1h-2.5Zm.5 1.5h1.5V5h-1.5v-.5ZM8 8.25a.75.75 0 0 1 1.5 0v5a.75.75 0 0 1-1.5 0v-5Zm3.25-.75a.75.75 0 0 0-.75.75v5a.75.75 0 0 0 1.5 0v-5a.75.75 0 0 0-.75-.75Z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+const ArrowLeftIcon = () => (
+  <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+    <path
+      fillRule="evenodd"
+      d="M17 10a.75.75 0 0 1-.75.75H5.56l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 1.06L5.56 9.25h10.69A.75.75 0 0 1 17 10Z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+/* -------------------------------------------------------------------------- */
+/* Component                                                                  */
+/* -------------------------------------------------------------------------- */
+
 export default function DishForm({
   category,
   onBack,
@@ -28,7 +157,8 @@ export default function DishForm({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [basePrice, setBasePrice] = useState("");
-const [imageUrl, setImageUrl] = useState<string | null>(null);  const [isAvailable, setIsAvailable] = useState(true);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isAvailable, setIsAvailable] = useState(true);
   const [preparationTime, setPreparationTime] = useState("");
   const [isSpecialOffer, setIsSpecialOffer] = useState(false);
   const [specialOfferPrice, setSpecialOfferPrice] = useState("");
@@ -39,7 +169,7 @@ const [imageUrl, setImageUrl] = useState<string | null>(null);  const [isAvailab
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  
+
   // =========================
   // Variant Functions
   // =========================
@@ -47,18 +177,12 @@ const [imageUrl, setImageUrl] = useState<string | null>(null);  const [isAvailab
   const addVariant = () => {
     setVariants((prev) => [
       ...prev,
-      {
-        name: "",
-        additionalPrice: "",
-        isAvailable: true,
-      },
+      { name: "", additionalPrice: "", isAvailable: true },
     ]);
   };
 
   const removeVariant = (index: number) => {
-    setVariants((prev) =>
-      prev.filter((_, i) => i !== index)
-    );
+    setVariants((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updateVariant = (
@@ -68,25 +192,16 @@ const [imageUrl, setImageUrl] = useState<string | null>(null);  const [isAvailab
   ) => {
     setVariants((prev) =>
       prev.map((variant, i) =>
-        i === index
-          ? {
-              ...variant,
-              [field]: value,
-            }
-          : variant
+        i === index ? { ...variant, [field]: value } : variant
       )
     );
   };
-
- 
 
   // =========================
   // Submit
   // =========================
 
-  const handleSubmit = async (
-    e: React.FormEvent
-  ) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!category) {
@@ -106,64 +221,58 @@ const [imageUrl, setImageUrl] = useState<string | null>(null);  const [isAvailab
 
     if (
       isSpecialOffer &&
-      (!specialOfferPrice ||
-        Number(specialOfferPrice) < 0)
+      (!specialOfferPrice || Number(specialOfferPrice) < 0)
     ) {
       setError("Please enter a valid special offer price.");
       return;
     }
 
+    const formData = new FormData();
 
-const formData = new FormData();
+    formData.append("categoryId", String(category.id));
+    formData.append("name", name.trim());
+    formData.append("description", description.trim());
+    formData.append("basePrice", String(Number(basePrice)));
 
-formData.append("categoryId", String(category.id));
-formData.append("name", name.trim());
-formData.append("description", description.trim());
-formData.append("basePrice", String(Number(basePrice)));
+    if (imageUrl) {
+      formData.append("imageUrl", imageUrl);
+    }
 
-if (imageUrl) {
-  formData.append("imageUrl", imageUrl);
-}
+    formData.append("isAvailable", String(isAvailable));
+    formData.append("preparationTime", String(Number(preparationTime)));
+    formData.append("isSpecialOffer", String(isSpecialOffer));
 
-formData.append("isAvailable", String(isAvailable));
-formData.append("preparationTime", String(Number(preparationTime)));
-formData.append("isSpecialOffer", String(isSpecialOffer));
+    formData.append(
+      "specialOfferPrice",
+      isSpecialOffer ? String(Number(specialOfferPrice)) : ""
+    );
 
-formData.append(
-  "specialOfferPrice",
-  isSpecialOffer ? String(Number(specialOfferPrice)) : ""
-);
+    formData.append("displayOrder", String(Number(displayOrder)));
 
-formData.append("displayOrder", String(Number(displayOrder)));
-
-formData.append(
-  "variants",
-  JSON.stringify(
-    variants.map((variant) => ({
-      name: variant.name.trim(),
-      additionalPrice: Number(variant.additionalPrice),
-      isAvailable: variant.isAvailable,
-    }))
-  )
-);
-
+    formData.append(
+      "variants",
+      JSON.stringify(
+        variants.map((variant) => ({
+          name: variant.name.trim(),
+          additionalPrice: Number(variant.additionalPrice),
+          isAvailable: variant.isAvailable,
+        }))
+      )
+    );
 
     try {
       setLoading(true);
       setError(null);
 
-      console.log("Selected category:", category);
-      console.log("Creating menu item:", formData);
-
       await createMenuItem(formData);
 
       onSuccess?.();
-      navigate("/menu")
+      navigate("/menu");
     } catch (error) {
       console.error("Failed to create menu item:", error);
 
       setError(
-        "Failed to create dish. Please check your information and try again."
+        "Couldn't save the dish. Check the details and try again."
       );
     } finally {
       setLoading(false);
@@ -171,401 +280,406 @@ formData.append(
   };
 
   return (
-    <Card className="mx-auto w-full max-w-4xl p-4 sm:p-6 lg:p-8">
-
-      {/* Header */}
-      <div className="mb-6 border-b pb-5">
-        <h2 className="text-lg font-semibold sm:text-xl lg:text-2xl">
-          Add Dish
-        </h2>
-
-        <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-          Category:{" "}
-          <span className="font-medium text-slate-700">
-            {category?.categoryName ?? "No category selected"}
-          </span>
-        </p>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {error}
-        </div>
-      )}
-
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-5 sm:space-y-6"
-      >
-
-        {/* Main fields */}
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-
-          {/* Name */}
-          <div className="space-y-2">
-            <label
-              htmlFor="dish-name"
-              className="text-sm font-medium"
-            >
-              Dish Name
-            </label>
-
-            <input
-              id="dish-name"
-              type="text"
-              placeholder="Enter dish name"
-              value={name}
-              onChange={(e) =>
-                setName(e.target.value)
-              }
-              required
-              disabled={loading}
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
-            />
+    <div className="mx-auto w-full max-w-4xl px-3 py-4 sm:px-6 sm:py-8">
+      <Card className="overflow-visible rounded-2xl border-stone-200 bg-white p-0 shadow-sm">
+        {/* ------------------------------ Header ------------------------------ */}
+        <header className="flex flex-col gap-4 border-b border-stone-200 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-6">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-stone-900 sm:text-2xl">
+              Add a dish
+            </h2>
+            <p className="mt-1 text-sm text-stone-500">
+              Fill in the details below. It will appear on your menu once saved.
+            </p>
           </div>
 
-          {/* Base Price */}
-          <div className="space-y-2">
-            <label
-              htmlFor="dish-base-price"
-              className="text-sm font-medium"
-            >
-              Base Price
-            </label>
-
-            <input
-              id="dish-base-price"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Enter base price"
-              value={basePrice}
-              onChange={(e) =>
-                setBasePrice(e.target.value)
-              }
-              required
-              disabled={loading}
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
-            />
-          </div>
-
- 
-{/* Image Upload */}
-<ImageUpload
-  imageUrl={imageUrl}
-  onImageUrlChange={setImageUrl}
-  disabled={loading}
-  maxSizeMB={5}
-/>
- 
-          {/* Preparation Time */}
-          <div className="space-y-2">
-            <label
-              htmlFor="preparation-time"
-              className="text-sm font-medium"
-            >
-              Preparation Time
-              <span className="ml-1 text-slate-400">
-                (minutes)
-              </span>
-            </label>
-
-            <input
-              id="preparation-time"
-              type="number"
-              min="0"
-              placeholder="e.g. 20"
-              value={preparationTime}
-              onChange={(e) =>
-                setPreparationTime(e.target.value)
-              }
-              required
-              disabled={loading}
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
-            />
-          </div>
-
-          {/* Display Order */}
-          <div className="space-y-2">
-            <label
-              htmlFor="display-order"
-              className="text-sm font-medium"
-            >
-              Display Order
-            </label>
-
-            <input
-              id="display-order"
-              type="number"
-              min="0"
-              placeholder="e.g. 1"
-              value={displayOrder}
-              onChange={(e) =>
-                setDisplayOrder(e.target.value)
-              }
-              required
-              disabled={loading}
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
-            />
-          </div>
-        </div>
-
-        {/* Description */}
-        <div className="space-y-2">
-          <label
-            htmlFor="dish-description"
-            className="text-sm font-medium"
-          >
-            Description
-          </label>
-
-          <textarea
-            id="dish-description"
-            placeholder="Enter dish description"
-            value={description}
-            onChange={(e) =>
-              setDescription(e.target.value)
+          <div
+            className={
+              "inline-flex w-fit items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium " +
+              (category
+                ? "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200"
+                : "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200")
             }
-            rows={3}
-            disabled={loading}
-            className="w-full resize-none rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
-          />
-        </div>
-
-        {/* Status Section */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
-          {/* Availability */}
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="pr-4">
-              <p className="text-sm font-medium">
-                Available
-              </p>
-
-              <p className="mt-1 text-xs text-slate-500">
-                Available for ordering
-              </p>
-            </div>
-
-            <input
-              type="checkbox"
-              checked={isAvailable}
-              onChange={(e) =>
-                setIsAvailable(e.target.checked)
+          >
+            <span
+              className={
+                "h-2 w-2 rounded-full " +
+                (category ? "bg-emerald-600" : "bg-amber-500")
               }
-              disabled={loading}
-              className="h-4 w-4 shrink-0"
             />
+            {category?.categoryName ?? "No category selected"}
           </div>
+        </header>
 
-          {/* Special Offer */}
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="pr-4">
-              <p className="text-sm font-medium">
-                Special Offer
-              </p>
-
-              <p className="mt-1 text-xs text-slate-500">
-                Enable special pricing
-              </p>
-            </div>
-
-            <input
-              type="checkbox"
-              checked={isSpecialOffer}
-              onChange={(e) =>
-                setIsSpecialOffer(e.target.checked)
-              }
-              disabled={loading}
-              className="h-4 w-4 shrink-0"
-            />
-          </div>
-        </div>
-
-        {/* Special Offer Price */}
-        {isSpecialOffer && (
-          <div className="space-y-2">
-            <label
-              htmlFor="special-offer-price"
-              className="text-sm font-medium"
-            >
-              Special Offer Price
-            </label>
-
-            <input
-              id="special-offer-price"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Enter special offer price"
-              value={specialOfferPrice}
-              onChange={(e) =>
-                setSpecialOfferPrice(e.target.value)
-              }
-              required
-              disabled={loading}
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
-            />
-          </div>
-        )}
-
-        {/* Variants */}
-        <div className="rounded-lg border p-3 sm:p-4">
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-sm font-semibold">
-                Variants
-              </h3>
-
-              <p className="mt-1 text-xs text-slate-500">
-                Add optional dish variants
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={addVariant}
-              disabled={loading}
-              className="w-full rounded-lg border px-3 py-2 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-            >
-              + Add Variant
-            </button>
-          </div>
-
-          {/* Variant List */}
-          {variants.length > 0 && (
-            <div className="mt-4 space-y-3">
-              {variants.map((variant, index) => (
-                <div
-                  key={index}
-                  className="rounded-lg bg-slate-50 p-3 sm:p-4"
+        <form onSubmit={handleSubmit} noValidate={false}>
+          <div className="divide-y divide-stone-200 px-4 py-6 sm:px-8 sm:py-8">
+            {/* ------------------------------ Error ----------------------------- */}
+            {error && (
+              <div
+                role="alert"
+                className="-mt-1 mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                  aria-hidden="true"
                 >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM9 6a1 1 0 0 1 2 0v4a1 1 0 1 1-2 0V6Zm1 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>{error}</span>
+              </div>
+            )}
 
-                  {/* Variant Header */}
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="text-sm font-medium">
-                      Variant {index + 1}
-                    </p>
+            {/* ---------------------------- Basic details ------------------------ */}
+            <Section
+              title="Dish details"
+              description="The name and description customers see on the menu."
+            >
+              <div>
+                <label htmlFor="dish-name" className={labelClass}>
+                  Dish name
+                </label>
+                <input
+                  id="dish-name"
+                  type="text"
+                  placeholder="e.g. Chicken momo"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  disabled={loading}
+                  className={inputClass + " mt-1.5"}
+                />
+              </div>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeVariant(index)
-                      }
+              <div>
+                <label htmlFor="dish-description" className={labelClass}>
+                  Description
+                  <span className="ml-1 font-normal text-stone-400">
+                    (optional)
+                  </span>
+                </label>
+                <textarea
+                  id="dish-description"
+                  placeholder="Ingredients, taste, serving size…"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                  disabled={loading}
+                  className={inputClass + " mt-1.5 resize-none"}
+                />
+              </div>
+            </Section>
+
+            {/* ------------------------------- Photo ----------------------------- */}
+            <Section
+              title="Photo"
+              description="A clear, well-lit photo helps the dish sell."
+            >
+              <ImageUpload
+                imageUrl={imageUrl}
+                onImageUrlChange={setImageUrl}
+                disabled={loading}
+                maxSizeMB={5}
+              />
+            </Section>
+
+            {/* ------------------------------ Pricing ---------------------------- */}
+            <Section
+              title="Pricing and timing"
+              description="Set the price, how long it takes to prepare, and where it shows in the category."
+            >
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="dish-base-price" className={labelClass}>
+                    Base price
+                  </label>
+                  <div className="mt-1.5">
+                    <PriceInput
+                      id="dish-base-price"
+                      placeholder="0.00"
+                      value={basePrice}
+                      onChange={(e) => setBasePrice(e.target.value)}
+                      required
                       disabled={loading}
-                      className="text-xs font-medium text-red-500 hover:text-red-700 disabled:opacity-50 sm:text-sm"
-                    >
-                      Remove
-                    </button>
-                  </div>
-
-                  {/* Variant Fields */}
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
-                    {/* Name */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Name
-                      </label>
-
-                      <input
-                        type="text"
-                        placeholder="e.g. Large"
-                        value={variant.name}
-                        onChange={(e) =>
-                          updateVariant(
-                            index,
-                            "name",
-                            e.target.value
-                          )
-                        }
-                        required
-                        disabled={loading}
-                        className="w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
-                      />
-                    </div>
-
-                    {/* Additional Price */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Additional Price
-                      </label>
-
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="e.g. 50"
-                        value={
-                          variant.additionalPrice
-                        }
-                        onChange={(e) =>
-                          updateVariant(
-                            index,
-                            "additionalPrice",
-                            e.target.value
-                          )
-                        }
-                        required
-                        disabled={loading}
-                        className="w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Variant Availability */}
-                  <div className="mt-4 flex items-center justify-between border-t pt-3">
-                    <label className="text-sm font-medium">
-                      Available
-                    </label>
-
-                    <input
-                      type="checkbox"
-                      checked={
-                        variant.isAvailable
-                      }
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "isAvailable",
-                          e.target.checked
-                        )
-                      }
-                      disabled={loading}
-                      className="h-4 w-4"
                     />
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Actions */}
-        <div className="flex flex-col-reverse gap-3 border-t pt-5 sm:flex-row sm:justify-between">
+                <div>
+                  <label htmlFor="preparation-time" className={labelClass}>
+                    Preparation time
+                  </label>
+                  <div className="relative mt-1.5">
+                    <input
+                      id="preparation-time"
+                      type="number"
+                      min="0"
+                      placeholder="e.g. 20"
+                      value={preparationTime}
+                      onChange={(e) => setPreparationTime(e.target.value)}
+                      required
+                      disabled={loading}
+                      className={inputClass + " pr-16"}
+                    />
+                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-sm text-stone-500">
+                      min
+                    </span>
+                  </div>
+                </div>
 
-          <button
-            type="button"
-            onClick={onBack}
-            disabled={loading}
-            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-          >
-            ← Go Back
-          </button>
+                <div>
+                  <label htmlFor="display-order" className={labelClass}>
+                    Display order
+                  </label>
+                  <input
+                    id="display-order"
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 1"
+                    value={displayOrder}
+                    onChange={(e) => setDisplayOrder(e.target.value)}
+                    required
+                    disabled={loading}
+                    className={inputClass + " mt-1.5"}
+                  />
+                  <p className={hintClass}>Lower numbers appear first.</p>
+                </div>
+              </div>
+            </Section>
 
-          <button
-            type="submit"
-            disabled={loading}
-            
-            className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-          >
-            {loading ? "Saving..." : "Save Dish"}
-          </button>
+            {/* --------------------------- Availability -------------------------- */}
+            <Section
+              title="Availability"
+              description="Control whether the dish can be ordered and whether it has a special price."
+            >
+              <div className="divide-y divide-stone-200 rounded-xl border border-stone-200">
+                <div className="flex items-center justify-between gap-4 p-4">
+                  <div>
+                    <p className="text-sm font-medium text-stone-900">
+                      Available for ordering
+                    </p>
+                    <p className="mt-0.5 text-xs text-stone-500">
+                      Turn off to hide the dish from customers temporarily.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={isAvailable}
+                    onChange={setIsAvailable}
+                    disabled={loading}
+                    label="Available for ordering"
+                  />
+                </div>
 
-        </div>
-      </form>
-    </Card>
+                <div className="p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-stone-900">
+                        Special offer
+                      </p>
+                      <p className="mt-0.5 text-xs text-stone-500">
+                        Show a discounted price instead of the base price.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={isSpecialOffer}
+                      onChange={setIsSpecialOffer}
+                      disabled={loading}
+                      label="Special offer"
+                    />
+                  </div>
+
+                  {isSpecialOffer && (
+                    <div className="mt-4 sm:max-w-xs">
+                      <label
+                        htmlFor="special-offer-price"
+                        className={labelClass}
+                      >
+                        Special offer price
+                      </label>
+                      <div className="mt-1.5">
+                        <PriceInput
+                          id="special-offer-price"
+                          placeholder="0.00"
+                          value={specialOfferPrice}
+                          onChange={(e) =>
+                            setSpecialOfferPrice(e.target.value)
+                          }
+                          required
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Section>
+
+            {/* ------------------------------ Variants --------------------------- */}
+            <Section
+              title="Variants"
+              description="Sizes or options that change the price, like Large or Extra cheese."
+            >
+              {variants.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 px-4 py-8 text-center">
+                  <p className="text-sm font-medium text-stone-700">
+                    No variants yet
+                  </p>
+                  <p className="mx-auto mt-1 max-w-xs text-xs text-stone-500">
+                    Skip this if the dish comes in one size at one price.
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {variants.map((variant, index) => (
+                    <li
+                      key={index}
+                      className="rounded-xl border border-stone-200 bg-stone-50 p-4"
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <p className="text-sm font-medium text-stone-800">
+                          Variant {index + 1}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => removeVariant(index)}
+                          disabled={loading}
+                          aria-label={`Remove variant ${index + 1}`}
+                          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-50"
+                        >
+                          <TrashIcon />
+                          Remove
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <label
+                            htmlFor={`variant-name-${index}`}
+                            className={labelClass}
+                          >
+                            Name
+                          </label>
+                          <input
+                            id={`variant-name-${index}`}
+                            type="text"
+                            placeholder="e.g. Large"
+                            value={variant.name}
+                            onChange={(e) =>
+                              updateVariant(index, "name", e.target.value)
+                            }
+                            required
+                            disabled={loading}
+                            className={inputClass + " mt-1.5"}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor={`variant-price-${index}`}
+                            className={labelClass}
+                          >
+                            Additional price
+                          </label>
+                          <div className="mt-1.5">
+                            <PriceInput
+                              id={`variant-price-${index}`}
+                              placeholder="e.g. 50"
+                              value={variant.additionalPrice}
+                              onChange={(e) =>
+                                updateVariant(
+                                  index,
+                                  "additionalPrice",
+                                  e.target.value
+                                )
+                              }
+                              required
+                              disabled={loading}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between border-t border-stone-200 pt-3">
+                        <span className="text-sm text-stone-700">
+                          Available
+                        </span>
+                        <Switch
+                          checked={variant.isAvailable}
+                          onChange={(value) =>
+                            updateVariant(index, "isAvailable", value)
+                          }
+                          disabled={loading}
+                          label={`Variant ${index + 1} available`}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <button
+                type="button"
+                onClick={addVariant}
+                disabled={loading}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-800 shadow-sm transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              >
+                <PlusIcon />
+                Add variant
+              </button>
+            </Section>
+          </div>
+
+          {/* ------------------------------ Actions ----------------------------- */}
+          <footer className="sticky bottom-0 z-10 flex flex-col-reverse gap-3 rounded-b-2xl border-t border-stone-200 bg-white/90 px-4 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <button
+              type="button"
+              onClick={onBack}
+              disabled={loading}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+            >
+              <ArrowLeftIcon />
+              Go back
+            </button>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            >
+              {loading && (
+                <svg
+                  className="h-4 w-4 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    className="opacity-25"
+                  />
+                  <path
+                    d="M4 12a8 8 0 0 1 8-8"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    className="opacity-90"
+                  />
+                </svg>
+              )}
+              {loading ? "Saving…" : "Save dish"}
+            </button>
+          </footer>
+        </form>
+      </Card>
+    </div>
   );
 }

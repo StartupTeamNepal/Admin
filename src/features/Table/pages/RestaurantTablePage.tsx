@@ -267,21 +267,21 @@ const handleOpenEdit = async () => {
       {!isLoading && tables.length > 0 && (
         <div className="flex flex-wrap gap-4">
           {tables.map((table) => (
-  <RestaurantTable
-  key={table.id}
-  tableId={table.id}
-  tableNumber={String(table.tableNumber)}
-  capacity={table.capacity}
- 
-  isSelected={selectedTableId === table.id}
-  onSelect={() => setSelectedTableId(table.id)}
-  onStatusChange={(newStatus) =>
-    handleTableStatusChange(table.id, newStatus)
-  }
-  onViewOrders={(tableId) => {
-    console.log("View orders for table:", tableId);
-  }}
-/>
+          <RestaurantTable
+          key={table.id}
+          tableId={table.id}
+          tableNumber={String(table.tableNumber)}
+          capacity={table.capacity}
+        
+          isSelected={selectedTableId === table.id}
+          onSelect={() => setSelectedTableId(table.id)}
+          onStatusChange={(newStatus) =>
+            handleTableStatusChange(table.id, newStatus)
+          }
+          onViewOrders={(tableId) => {
+            console.log("View orders for table:", tableId);
+          }}
+        />
           ))}
         </div>
       )}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   createMenuCategory,
   type CreateMenuCategoryRequest,
@@ -8,6 +8,17 @@ interface CategoryFormProps {
   onClose: () => void;
   onSuccess?: () => void;
 }
+
+const inputClass =
+  "block w-full rounded-lg border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 " +
+  "placeholder:text-stone-400 shadow-sm transition " +
+  "focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 " +
+  "disabled:cursor-not-allowed disabled:bg-stone-100 disabled:opacity-60 " +
+  "dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder:text-stone-500 " +
+  "dark:focus:border-blue-500 dark:focus:ring-blue-500/30 dark:disabled:bg-stone-800";
+
+const labelClass =
+  "block text-sm font-medium text-stone-800 dark:text-stone-200";
 
 export default function CategoryForm({
   onClose,
@@ -19,6 +30,15 @@ export default function CategoryForm({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Close on Escape (unless a save is in progress)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !loading) onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [loading, onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +68,7 @@ export default function CategoryForm({
     } catch (error) {
       console.error("Failed to create menu category:", error);
 
-      setError("Failed to create category. Please try again.");
+      setError("Couldn't save the category. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -56,49 +76,78 @@ export default function CategoryForm({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/50 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={() => !loading && onClose()}
     >
       <div
-        className="w-full max-w-lg rounded-xl bg-white shadow-xl dark:bg-slate-900"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="category-form-title"
+        className="flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:max-w-lg sm:rounded-2xl dark:bg-stone-900"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Add Category
-          </h2>
+        <div className="flex items-start justify-between gap-4 border-b border-stone-200 px-5 py-4 sm:px-6 sm:py-5 dark:border-stone-800">
+          <div>
+            <h2
+              id="category-form-title"
+              className="text-lg font-semibold tracking-tight text-stone-900 sm:text-xl dark:text-stone-100"
+            >
+              Add a category
+            </h2>
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+              Categories group dishes on your menu, like Breakfast or Drinks.
+            </p>
+          </div>
 
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="text-slate-500 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:text-slate-200"
+            aria-label="Close"
+            className="-mr-2 -mt-1 rounded-lg p-2 text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
           >
-            ✕
+            <svg
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L8.94 10l-4.72 4.72a.75.75 0 1 0 1.06 1.06L10 11.06l4.72 4.72a.75.75 0 1 0 1.06-1.06L11.06 10l4.72-4.72a.75.75 0 0 0-1.06-1.06L10 8.94 5.28 4.22Z" />
+            </svg>
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-5 p-6">
-
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="space-y-5 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
             {/* Error */}
             {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-                {error}
+              <div
+                role="alert"
+                className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM9 6a1 1 0 0 1 2 0v4a1 1 0 1 1-2 0V6Zm1 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>{error}</span>
               </div>
             )}
 
             {/* Category Name */}
-            <div className="space-y-2">
-              <label
-                htmlFor="category-name"
-                className="text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                Category Name
+            <div>
+              <label htmlFor="category-name" className={labelClass}>
+                Category name
               </label>
-
               <input
                 id="category-name"
                 type="text"
@@ -107,19 +156,19 @@ export default function CategoryForm({
                 placeholder="e.g. Breakfast"
                 disabled={loading}
                 required
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                autoFocus
+                className={inputClass + " mt-1.5"}
               />
             </div>
 
             {/* Description */}
-            <div className="space-y-2">
-              <label
-                htmlFor="category-description"
-                className="text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
+            <div>
+              <label htmlFor="category-description" className={labelClass}>
                 Description
+                <span className="ml-1 font-normal text-stone-400">
+                  (optional)
+                </span>
               </label>
-
               <textarea
                 id="category-description"
                 value={description}
@@ -127,19 +176,15 @@ export default function CategoryForm({
                 placeholder="e.g. Morning meals served until 11 AM"
                 rows={3}
                 disabled={loading}
-                className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className={inputClass + " mt-1.5 resize-none"}
               />
             </div>
 
             {/* Display Order */}
-            <div className="space-y-2">
-              <label
-                htmlFor="category-display-order"
-                className="text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                Display Order
+            <div className="sm:max-w-[200px]">
+              <label htmlFor="category-display-order" className={labelClass}>
+                Display order
               </label>
-
               <input
                 id="category-display-order"
                 type="number"
@@ -152,18 +197,21 @@ export default function CategoryForm({
                   )
                 }
                 disabled={loading}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className={inputClass + " mt-1.5"}
               />
+              <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                Lower numbers appear first.
+              </p>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4 dark:border-slate-800">
+          <div className="flex flex-col-reverse gap-3 border-t border-stone-200 px-5 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-stone-800">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto dark:text-stone-300 dark:hover:bg-stone-800"
             >
               Cancel
             </button>
@@ -171,9 +219,33 @@ export default function CategoryForm({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto dark:focus-visible:ring-offset-stone-900"
             >
-              {loading ? "Saving..." : "Save"}
+              {loading && (
+                <svg
+                  className="h-4 w-4 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    className="opacity-25"
+                  />
+                  <path
+                    d="M4 12a8 8 0 0 1 8-8"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    className="opacity-90"
+                  />
+                </svg>
+              )}
+              {loading ? "Saving…" : "Save category"}
             </button>
           </div>
         </form>

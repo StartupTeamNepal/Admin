@@ -11,6 +11,37 @@ import { ArrowLeft, Loader2, Printer, Receipt, X } from "lucide-react";
 import { getBillByOrderId, getOrdersByTableId } from "../api/orderlinks";
 
 /* ------------------------------------------------------------------ */
+/*  Shared class names (same idea as inputClass in the forms)         */
+/*  Buttons are blue. Emerald only shows up in the focus ring.        */
+/* ------------------------------------------------------------------ */
+
+// Two-tone focus ring: blue ring with an emerald outline just outside it
+const FOCUS =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 " +
+  "focus-visible:outline-emerald-500 focus-visible:ring-2 focus-visible:ring-blue-500";
+
+const btnBase =
+  "inline-flex items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition " +
+  "disabled:cursor-not-allowed disabled:opacity-50 " +
+  FOCUS;
+
+const btnPrimary =
+  btnBase + " bg-blue-600 px-4 py-2.5 text-white shadow-sm hover:bg-blue-700";
+
+const btnSecondary =
+  btnBase +
+  " border border-stone-300 bg-white px-4 py-2.5 text-stone-700 shadow-sm hover:bg-stone-50 " +
+  "dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800";
+
+const btnIcon =
+  "rounded-lg p-2 text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 " +
+  "dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 " +
+  FOCUS;
+
+const cardClass =
+  "rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900";
+
+/* ------------------------------------------------------------------ */
 /*  Types the dialog works with                                       */
 /*  The API response shape isn't known, so the normalisers below      */
 /*  accept several common field names. Adjust them if yours differ.   */
@@ -284,7 +315,7 @@ export default function TableOrdersDialog({
     } catch (err) {
       if (requestId !== requestRef.current) return;
       console.error("Failed to load table orders:", err);
-      setOrdersError("Failed to load orders.");
+      setOrdersError("Couldn't load the orders.");
     } finally {
       if (requestId === requestRef.current) setOrdersLoading(false);
     }
@@ -336,7 +367,7 @@ export default function TableOrdersDialog({
 
     if (parts.length === 0) {
       console.error("Failed to generate bill:", results);
-      setBillError("Failed to generate the bill.");
+      setBillError("Couldn't generate the bill.");
     } else {
       setBill(mergeBills(parts));
       setBillSkipped(results.length - parts.length);
@@ -378,7 +409,7 @@ export default function TableOrdersDialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -392,29 +423,29 @@ export default function TableOrdersDialog({
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl outline-none sm:max-w-lg sm:rounded-2xl dark:bg-slate-900"
+        className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl outline-none sm:max-w-lg sm:rounded-2xl dark:bg-stone-900"
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-700">
+        <div className="flex items-center justify-between gap-3 border-b border-stone-200 px-4 py-4 sm:px-6 dark:border-stone-800">
           <div className="min-w-0">
             <h2
               id={titleId}
-              className="truncate text-lg font-semibold text-slate-900 dark:text-slate-100"
+              className="truncate text-lg font-semibold tracking-tight text-stone-900 sm:text-xl dark:text-stone-100"
             >
               Table {tableNumber}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-stone-500 sm:text-sm dark:text-stone-400">
               {view === "orders" ? "Current orders" : "Bill"}
             </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {view === "orders" ? (
               <button
                 type="button"
                 onClick={generateBill}
                 disabled={ordersLoading || orders.length === 0}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className={btnPrimary + " !px-3 !py-2"}
               >
                 <Receipt className="h-4 w-4" />
                 Get bill
@@ -423,7 +454,7 @@ export default function TableOrdersDialog({
               <button
                 type="button"
                 onClick={() => setView("orders")}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                className={btnSecondary + " !px-3 !py-2"}
               >
                 <ArrowLeft className="h-4 w-4" />
                 Orders
@@ -434,7 +465,7 @@ export default function TableOrdersDialog({
               type="button"
               aria-label="Close"
               onClick={onClose}
-              className="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-400 dark:hover:bg-slate-800"
+              className={btnIcon}
             >
               <X className="h-5 w-5" />
             </button>
@@ -442,23 +473,25 @@ export default function TableOrdersDialog({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto bg-slate-50 px-5 py-4 dark:bg-slate-950/40">
+        <div className="flex-1 overflow-y-auto bg-stone-50 px-4 py-4 sm:px-6 sm:py-5 dark:bg-stone-950/40">
           {view === "orders" && (
             <>
               {ordersLoading && (
-                <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">
+                <div className="flex items-center justify-center gap-2 py-12 text-sm text-stone-500">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading orders...
+                  Loading orders…
                 </div>
               )}
 
               {!ordersLoading && ordersError && (
                 <div className="py-10 text-center">
-                  <p className="mb-3 text-sm text-red-500">{ordersError}</p>
+                  <p className="mb-3 text-sm text-red-600 dark:text-red-400">
+                    {ordersError}
+                  </p>
                   <button
                     type="button"
                     onClick={loadOrders}
-                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900"
+                    className={btnSecondary}
                   >
                     Try again
                   </button>
@@ -466,61 +499,67 @@ export default function TableOrdersDialog({
               )}
 
               {!ordersLoading && !ordersError && orders.length === 0 && (
-                <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500 dark:border-slate-700">
-                  No orders on this table yet.
+                <div className="rounded-xl border border-dashed border-stone-300 bg-white px-4 py-10 text-center dark:border-stone-700 dark:bg-stone-900">
+                  <p className="text-sm font-medium text-stone-700 dark:text-stone-200">
+                    No orders yet
+                  </p>
+                  <p className="mt-1 text-xs text-stone-500">
+                    Orders placed for this table will show up here.
+                  </p>
                 </div>
               )}
 
               {!ordersLoading && !ordersError && orders.length > 0 && (
                 <div className="flex flex-col gap-3">
                   {orders.map((order) => (
-                    <article
-                      key={order.id}
-                      className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
-                    >
+                    <article key={order.id} className={cardClass}>
                       <div className="mb-3 flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
                             {order.label}
                           </h3>
                           {formatTime(order.createdAt) && (
-                            <p className="text-xs text-slate-500">
+                            <p className="mt-0.5 text-xs text-stone-500">
                               {formatTime(order.createdAt)}
                             </p>
                           )}
                         </div>
                         {order.status && (
-                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                          <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-700 ring-1 ring-inset ring-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:ring-stone-700">
                             {order.status}
                           </span>
                         )}
                       </div>
 
-                      <ul className="flex flex-col gap-1.5">
+                      <ul className="flex flex-col gap-2">
                         {order.items.map((item, i) => (
                           <li
                             key={i}
-                            className="flex justify-between gap-3 text-sm text-slate-700 dark:text-slate-300"
+                            className="flex items-start justify-between gap-3 text-sm text-stone-700 dark:text-stone-300"
                           >
-                            <span>
-                              <span className="tabular-nums text-slate-500">
-                                {item.quantity} ×
-                              </span>{" "}
-                              {item.name}
+                            <span className="flex min-w-0 gap-2">
+                              <span className="shrink-0 rounded bg-stone-100 px-1.5 text-xs font-medium leading-5 tabular-nums text-stone-600 dark:bg-stone-800 dark:text-stone-400">
+                                {item.quantity}×
+                              </span>
+                              <span className="min-w-0 break-words">
+                                {item.name}
+                              </span>
                             </span>
-                            <span className="tabular-nums">{money(item.total)}</span>
+                            <span className="shrink-0 tabular-nums">
+                              {money(item.total)}
+                            </span>
                           </li>
                         ))}
                       </ul>
 
-                      <div className="mt-3 flex justify-between border-t border-slate-100 pt-3 text-sm font-semibold text-slate-900 dark:border-slate-800 dark:text-slate-100">
+                      <div className="mt-3 flex justify-between border-t border-stone-200 pt-3 text-sm font-semibold text-stone-900 dark:border-stone-800 dark:text-stone-100">
                         <span>Order total</span>
                         <span className="tabular-nums">{money(order.total)}</span>
                       </div>
                     </article>
                   ))}
 
-                  <div className="flex justify-between px-1 pt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <div className="flex items-center justify-between rounded-xl bg-stone-900 px-4 py-3 text-sm font-semibold text-white dark:bg-stone-100 dark:text-stone-900">
                     <span>
                       Table total ({orders.length}{" "}
                       {orders.length === 1 ? "order" : "orders"})
@@ -535,19 +574,21 @@ export default function TableOrdersDialog({
           {view === "bill" && (
             <>
               {billLoading && (
-                <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">
+                <div className="flex items-center justify-center gap-2 py-12 text-sm text-stone-500">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating bill...
+                  Generating bill…
                 </div>
               )}
 
               {!billLoading && billError && (
                 <div className="py-10 text-center">
-                  <p className="mb-3 text-sm text-red-500">{billError}</p>
+                  <p className="mb-3 text-sm text-red-600 dark:text-red-400">
+                    {billError}
+                  </p>
                   <button
                     type="button"
                     onClick={generateBill}
-                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900"
+                    className={btnSecondary}
                   >
                     Try again
                   </button>
@@ -557,37 +598,40 @@ export default function TableOrdersDialog({
               {!billLoading && bill && (
                 <>
                   {billSkipped > 0 && (
-                    <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                    <p
+                      role="alert"
+                      className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-300"
+                    >
                       The bill could not be generated for {billSkipped} of{" "}
                       {orders.length} orders, so this total may be incomplete.
                     </p>
                   )}
 
-                  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-5 dark:border-slate-600 dark:bg-slate-900">
-                    <h3 className="mb-3 text-center text-base font-semibold text-slate-900 dark:text-slate-100">
+                  <div className="rounded-xl border border-dashed border-stone-300 bg-white p-4 sm:p-5 dark:border-stone-600 dark:bg-stone-900">
+                    <h3 className="mb-3 text-center text-base font-semibold text-stone-900 dark:text-stone-100">
                       Bill
                     </h3>
 
                     <dl className="mb-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                      <dt className="text-slate-500">Date</dt>
-                      <dd className="text-right text-slate-900 dark:text-slate-100">
+                      <dt className="text-stone-500">Date</dt>
+                      <dd className="text-right text-stone-900 dark:text-stone-100">
                         {formatDateTime(bill.date)}
                       </dd>
-                      <dt className="text-slate-500">Table</dt>
-                      <dd className="text-right text-slate-900 dark:text-slate-100">
+                      <dt className="text-stone-500">Table</dt>
+                      <dd className="text-right text-stone-900 dark:text-stone-100">
                         {tableNumber}
                       </dd>
                     </dl>
 
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-y border-dashed border-slate-300 text-left text-slate-500 dark:border-slate-600">
+                        <tr className="border-y border-dashed border-stone-300 text-left text-stone-500 dark:border-stone-600">
                           <th className="py-2 font-medium">Dish</th>
                           <th className="py-2 text-right font-medium">Qty</th>
                           <th className="py-2 text-right font-medium">Price</th>
                         </tr>
                       </thead>
-                      <tbody className="text-slate-800 dark:text-slate-200">
+                      <tbody className="text-stone-800 dark:text-stone-200">
                         {bill.lines.map((line, i) => (
                           <tr key={i}>
                             <td className="py-1.5 pr-2">{line.name}</td>
@@ -602,7 +646,7 @@ export default function TableOrdersDialog({
                       </tbody>
                       <tfoot>
                         {bill.extras.map((extra) => (
-                          <tr key={extra.label} className="text-slate-500">
+                          <tr key={extra.label} className="text-stone-500">
                             <td colSpan={2} className="py-1">
                               {extra.label}
                             </td>
@@ -611,7 +655,7 @@ export default function TableOrdersDialog({
                             </td>
                           </tr>
                         ))}
-                        <tr className="border-t border-dashed border-slate-300 text-base font-semibold text-slate-900 dark:border-slate-600 dark:text-slate-100">
+                        <tr className="border-t border-dashed border-stone-300 text-base font-semibold text-stone-900 dark:border-stone-600 dark:text-stone-100">
                           <td colSpan={2} className="pt-3">
                             Total
                           </td>
@@ -630,11 +674,11 @@ export default function TableOrdersDialog({
 
         {/* Footer (bill only) */}
         {view === "bill" && bill && !billLoading && (
-          <div className="flex justify-end border-t border-slate-200 px-5 py-3 dark:border-slate-700">
+          <div className="flex border-t border-stone-200 px-4 py-3 sm:justify-end sm:px-6 dark:border-stone-800">
             <button
               type="button"
               onClick={() => printBill(bill, tableNumber)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              className={btnPrimary + " w-full sm:w-auto"}
             >
               <Printer className="h-4 w-4" />
               Print bill
