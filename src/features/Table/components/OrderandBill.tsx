@@ -198,7 +198,7 @@ const esc = (s: string) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string)
   );
 
-function printBill(bill: BillView, tableNumber: number) {
+function printBill(bill: BillView, tableNumber: string) {
   const rows = bill.lines
     .map(
       (l) =>
@@ -246,7 +246,7 @@ export interface TableOrdersDialogProps {
   open: boolean;
   onClose: () => void;
   tableId: string;
-  tableNumber: number;
+  tableNumber: string;
 }
 
 const FOCUSABLE =

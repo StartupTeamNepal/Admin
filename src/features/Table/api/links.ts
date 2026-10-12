@@ -14,14 +14,14 @@ export interface CreateTableRequest {
   tableNumber: string;
   capacity: number;
   tableType: string;
-  description: string;
+  description?: string;
 }
 
 export interface UpdateTableRequest {
   tableNumber: string;
   capacity: number;
   tableType: string;
-  description: string;
+  description?: string;
 }
 
 export interface TableResponse {

@@ -15,11 +15,10 @@ import { Pencil } from "lucide-react";
 import { getTableById } from "../api/links";
 interface TableData {
   id: string;
-  tableNumber: number;
+  tableNumber: string;
   capacity: number;
   tableType: string;
-  description: string;
-  status: TableStatus;
+ 
 }
 
 export default function TableGrid() {
@@ -46,11 +45,10 @@ export default function TableGrid() {
           const formattedTables: TableData[] =
             response.data.items.map((table) => ({
               id: table.id,
-              tableNumber: Number(table.tableNumber),
+              tableNumber: String(table.tableNumber),
               capacity: table.capacity,
               tableType: table.tableType,
-              description: table.description,
-              status: table.status as TableStatus,
+ 
             }));
 
           setTables(formattedTables);
@@ -81,8 +79,7 @@ export default function TableGrid() {
         tableNumber: data.tableNumber,
         capacity: data.capacity,
         tableType: data.tableType,
-        description: data.description,
-      });
+       });
 
       if (!response.success) {
         toast.error(
@@ -93,12 +90,10 @@ export default function TableGrid() {
 
       const newTable: TableData = {
         id: response.data.id,
-        tableNumber: Number(response.data.tableNumber),
+        tableNumber: String(response.data.tableNumber),
         capacity: response.data.capacity,
         tableType: response.data.tableType,
-        description: response.data.description,
-        status: response.data.status as TableStatus,
-      };
+       };
 
       setTables((prev) => [...prev, newTable]);
 
@@ -129,8 +124,7 @@ export default function TableGrid() {
         tableNumber: data.tableNumber,
         capacity: data.capacity,
         tableType: data.tableType,
-        description: data.description,
-      });
+       });
 
       if (!response.success) {
         toast.error(
@@ -144,14 +138,12 @@ export default function TableGrid() {
           table.id === selectedTableId
             ? {
                 ...table,
-                tableNumber: Number(
+                tableNumber:String(
                   response.data.tableNumber
                 ),
                 capacity: response.data.capacity,
                 tableType: response.data.tableType,
-                description: response.data.description,
-                status:
-                  response.data.status as TableStatus,
+ 
               }
             : table
         )
@@ -193,7 +185,7 @@ const handleOpenEdit = async () => {
       tableNumber: response.data.tableNumber,
       capacity: response.data.capacity,
       tableType: response.data.tableType,
-      description: response.data.description,
+ 
     });
 
     setIsEditing(true);
@@ -278,9 +270,9 @@ const handleOpenEdit = async () => {
   <RestaurantTable
   key={table.id}
   tableId={table.id}
-  tableNumber={Number(table.tableNumber)}
+  tableNumber={String(table.tableNumber)}
   capacity={table.capacity}
-  status={table.status}
+ 
   isSelected={selectedTableId === table.id}
   onSelect={() => setSelectedTableId(table.id)}
   onStatusChange={(newStatus) =>

@@ -6,7 +6,7 @@ export interface TableFormData {
   tableNumber: string;
   capacity: number;
   tableType: string;
-  description: string;
+  description?: string;
 }
 
 interface TableFormProps {

@@ -6,7 +6,7 @@ export type TableStatus = 'unbooked' | 'booked' | 'unavailable';
 
 export interface RestaurantTableProps {
   tableId: string;
-  tableNumber?: number;
+  tableNumber?: string;
   capacity?: number;
   status?: TableStatus;
   initialStatus?: TableStatus;
@@ -190,7 +190,7 @@ function TableIllustration({
 
 export default function RestaurantTable({
   tableId,
-  tableNumber = 1,
+  tableNumber = "",
   capacity = 4,
   status: controlledStatus,
   initialStatus = 'unbooked',
