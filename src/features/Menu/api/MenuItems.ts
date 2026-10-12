@@ -130,23 +130,25 @@ export const getMenuItemById = async (
 // POST - Create Menu Item
  
 
-export const createMenuItem = async (
-  data: CreateMenuItemRequest
-): Promise<MenuItemResponse> => {
-  const { categoryId, ...menuItemData } = data;
 
+ // POST - Create Menu Item
+
+export const createMenuItem = async (
+  data: FormData
+): Promise<MenuItemResponse> => {
   const response = await api.post<MenuItemResponse>(
     "/api/admin/v1/menu-items",
-    menuItemData,
+    data,
     {
-      params: {
-        categoryId: categoryId,
+      headers: {
+        "Content-Type": "multipart/form-data",
       },
     }
   );
 
   return response.data;
 };
+
 
  
 // PUT - Update Menu Item
@@ -173,6 +175,31 @@ export const deleteMenuItem = async (
 ): Promise<MenuItemResponse> => {
   const response = await api.delete<MenuItemResponse>(
     `/api/admin/v1/menu-items/${id}`
+  );
+
+  return response.data;
+};
+
+
+
+export interface ImageUploadResponse {
+  success: boolean;
+  message: string;
+  data: {
+    imageUrl: string;
+  };
+  errors: unknown;
+}
+
+export const uploadMenuItemImage = async (
+  image: File
+): Promise<ImageUploadResponse> => {
+  const formData = new FormData();
+  formData.append("file", image);
+
+  const response = await api.post<ImageUploadResponse>(
+    "/api/admin/v1/uploads",
+    formData
   );
 
   return response.data;

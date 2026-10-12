@@ -6,6 +6,7 @@ import {
 } from "../api/MenuItems";
 import {type  MenuCategory } from "../api/Categorylinks";
 import { useNavigate } from "react-router-dom";
+import ImageUpload from "./ImageUpload";
 
 interface Variant {
   name: string;
@@ -27,8 +28,7 @@ export default function DishForm({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [basePrice, setBasePrice] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [isAvailable, setIsAvailable] = useState(true);
+const [imageUrl, setImageUrl] = useState<string | null>(null);  const [isAvailable, setIsAvailable] = useState(true);
   const [preparationTime, setPreparationTime] = useState("");
   const [isSpecialOffer, setIsSpecialOffer] = useState(false);
   const [specialOfferPrice, setSpecialOfferPrice] = useState("");
@@ -78,6 +78,8 @@ export default function DishForm({
     );
   };
 
+ 
+
   // =========================
   // Submit
   // =========================
@@ -111,36 +113,49 @@ export default function DishForm({
       return;
     }
 
-    const payload: CreateMenuItemRequest = {
-      categoryId: category.id,
-      name: name.trim(),
-      description: description.trim(),
-      basePrice: Number(basePrice),
-      imageUrl: imageUrl.trim(),
-      isAvailable,
-      preparationTime: Number(preparationTime),
-      isSpecialOffer,
-      specialOfferPrice: isSpecialOffer
-        ? Number(specialOfferPrice)
-        : null,
-      displayOrder: Number(displayOrder),
-      variants: variants.map((variant) => ({
-        name: variant.name.trim(),
-        additionalPrice: Number(
-          variant.additionalPrice
-        ),
-        isAvailable: variant.isAvailable,
-      })),
-    };
+
+const formData = new FormData();
+
+formData.append("categoryId", String(category.id));
+formData.append("name", name.trim());
+formData.append("description", description.trim());
+formData.append("basePrice", String(Number(basePrice)));
+
+if (imageUrl) {
+  formData.append("imageUrl", imageUrl);
+}
+
+formData.append("isAvailable", String(isAvailable));
+formData.append("preparationTime", String(Number(preparationTime)));
+formData.append("isSpecialOffer", String(isSpecialOffer));
+
+formData.append(
+  "specialOfferPrice",
+  isSpecialOffer ? String(Number(specialOfferPrice)) : ""
+);
+
+formData.append("displayOrder", String(Number(displayOrder)));
+
+formData.append(
+  "variants",
+  JSON.stringify(
+    variants.map((variant) => ({
+      name: variant.name.trim(),
+      additionalPrice: Number(variant.additionalPrice),
+      isAvailable: variant.isAvailable,
+    }))
+  )
+);
+
 
     try {
       setLoading(true);
       setError(null);
 
       console.log("Selected category:", category);
-      console.log("Creating menu item:", payload);
+      console.log("Creating menu item:", formData);
 
-      await createMenuItem(payload);
+      await createMenuItem(formData);
 
       onSuccess?.();
       navigate("/menu")
@@ -235,31 +250,15 @@ export default function DishForm({
             />
           </div>
 
-          {/* Image URL */}
-          <div className="space-y-2">
-            <label
-              htmlFor="dish-image-url"
-              className="text-sm font-medium"
-            >
-              Image URL
-              <span className="ml-1 text-slate-400">
-                (Optional)
-              </span>
-            </label>
-
-            <input
-              id="dish-image-url"
-              type="url"
-              placeholder="https://example.com/image.jpg"
-              value={imageUrl}
-              onChange={(e) =>
-                setImageUrl(e.target.value)
-              }
-              disabled={loading}
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-blue-500 disabled:opacity-60"
-            />
-          </div>
-
+ 
+{/* Image Upload */}
+<ImageUpload
+  imageUrl={imageUrl}
+  onImageUrlChange={setImageUrl}
+  disabled={loading}
+  maxSizeMB={5}
+/>
+ 
           {/* Preparation Time */}
           <div className="space-y-2">
             <label
