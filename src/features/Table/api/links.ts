@@ -1,7 +1,7 @@
  import api from "@/shared/api/axiosInstance";
 
 export interface Table {
-  id: number;
+  id: string;
   tableNumber: string;
   capacity: number;
   tableType: string;
@@ -57,7 +57,7 @@ export const getTables = async (): Promise<TablesResponse> => {
 
 // GET  
 export const getTableById = async (
-  id: number
+  id:string
 ): Promise<TableResponse> => {
   const response = await api.get<TableResponse>(
     `/api/admin/v1/tables/${id}`
@@ -80,7 +80,7 @@ export const createTable = async (
 
 // PUT  
 export const updateTable = async (
-  id: number,
+  id: string,
   data: UpdateTableRequest
 ): Promise<TableResponse> => {
   const response = await api.put<TableResponse>(
@@ -101,4 +101,4 @@ export const toggleTable = async (
 
   return response.data;
 };
- 
+

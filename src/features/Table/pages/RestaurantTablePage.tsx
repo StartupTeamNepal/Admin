@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { getTableById } from "../api/links";
 interface TableData {
-  id: number;
+  id: string;
   tableNumber: number;
   capacity: number;
   tableType: string;
@@ -23,7 +23,7 @@ interface TableData {
 }
 
 export default function TableGrid() {
-  const [selectedTableId, setSelectedTableId] = useState<number | null>(
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(
     null
   );
 
@@ -209,7 +209,7 @@ const handleOpenEdit = async () => {
 };
 
   const handleTableStatusChange = (
-    tableId: number,
+    tableId: string,
     newStatus: TableStatus
   ) => {
     setTables((prev) =>
@@ -275,24 +275,21 @@ const handleOpenEdit = async () => {
       {!isLoading && tables.length > 0 && (
         <div className="flex flex-wrap gap-4">
           {tables.map((table) => (
-            <RestaurantTable
-              key={table.id}
-              tableNumber={table.tableNumber}
-              capacity={table.capacity}
-              status={table.status}
-              isSelected={
-                selectedTableId === table.id
-              }
-              onSelect={() =>
-                setSelectedTableId(table.id)
-              }
-              onStatusChange={(newStatus) =>
-                handleTableStatusChange(
-                  table.id,
-                  newStatus
-                )
-              }
-            />
+  <RestaurantTable
+  key={table.id}
+  tableId={table.id}
+  tableNumber={Number(table.tableNumber)}
+  capacity={table.capacity}
+  status={table.status}
+  isSelected={selectedTableId === table.id}
+  onSelect={() => setSelectedTableId(table.id)}
+  onStatusChange={(newStatus) =>
+    handleTableStatusChange(table.id, newStatus)
+  }
+  onViewOrders={(tableId) => {
+    console.log("View orders for table:", tableId);
+  }}
+/>
           ))}
         </div>
       )}
